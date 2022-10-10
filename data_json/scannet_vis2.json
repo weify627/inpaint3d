@@ -1,0 +1,22 @@
+{
+    "test": [
+        {
+            "rgb": "test/699-140-inp.png",
+            "depth": "test/699-140-depth.png",
+            "gt": "test/699-140-depth.png",
+            "K": "scene0699_00/intrinsic/intrinsic_color.txt"
+        },
+        {
+            "rgb": "test/699-1700-inp.png",
+            "depth": "test/699-1700-depth.png",
+            "gt": "test/699-1700-depth.png",
+            "K": "scene0699_00/intrinsic/intrinsic_color.txt"
+        },
+        {
+            "rgb": "test/699-2020-inp.png",
+            "depth": "test/699-2020-depth.png",
+            "gt": "test/699-2020-depth.png",
+            "K": "scene0699_00/intrinsic/intrinsic_color.txt"
+        }
+    ]
+}

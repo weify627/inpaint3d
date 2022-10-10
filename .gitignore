@@ -1,0 +1,7 @@
+src/pretrained/
+data/
+**/__pycache__
+**/*.pyc
+.idea/
+experiments/
+results/

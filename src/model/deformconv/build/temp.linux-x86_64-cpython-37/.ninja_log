@@ -1,0 +1,8 @@
+# ninja log v5
+1	2831	1664161168372243594	/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/build/temp.linux-x86_64-cpython-37/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/src/cpu/modulated_deform_cpu.o	1112aeab058ff544
+0	3103	1664161168648239881	/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/build/temp.linux-x86_64-cpython-37/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/src/cpu/deform_cpu.o	2ec07d23065b733c
+1	3104	1664161168648239881	/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/build/temp.linux-x86_64-cpython-37/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/src/cpu/deform_psroi_pooling_cpu.o	d441527e5f1084f6
+1	11738	1664161286414610933	/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/build/temp.linux-x86_64-cpython-37/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/src/cuda/deform_conv_cuda.o	85c0600a103bc38a
+1	11918	1664161286594608362	/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/build/temp.linux-x86_64-cpython-37/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/src/cuda/deform_psroi_pooling_cuda.o	b255655ce31de90f
+1	11957	1664161286634607791	/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/build/temp.linux-x86_64-cpython-37/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/src/cuda/modulated_deform_conv_cuda.o	c494571747591702
+2	15128	1664161289766563062	/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/build/temp.linux-x86_64-cpython-37/home/fwei/project/NLSPN_ECCV20/src/model/deformconv/src/vision.o	29f139c4e42a4785

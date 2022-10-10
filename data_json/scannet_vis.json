@@ -1,0 +1,16 @@
+{
+    "test": [
+        {
+            "rgb": "test/699-540-inp1.jpg",
+            "depth": "test/699-540-depth1.png",
+            "gt": "test/699-540-depth1.png",
+            "K": "scene0699_00/intrinsic/intrinsic_color.txt"
+        },
+        {
+            "rgb": "test/699-540-inp2.jpg",
+            "depth": "test/699-540-depth2.png",
+            "gt": "test/699-540-depth2.png",
+            "K": "scene0699_00/intrinsic/intrinsic_color.txt"
+        }
+    ]
+}
