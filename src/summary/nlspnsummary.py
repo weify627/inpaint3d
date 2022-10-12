@@ -186,6 +186,7 @@ class NLSPNSummary(BaseSummary):
                 offset = output['offset'].data.cpu().numpy()
                 aff = output['aff'].data.cpu().numpy()
                 gamma = output['gamma'].data.cpu().numpy()
+                confidence = output['confidence'].data.cpu().numpy()
                 feat_init = output['pred_init']
                 list_feat = output['pred_inter']
 
@@ -266,3 +267,4 @@ class NLSPNSummary(BaseSummary):
                 np.save('{}/offset.npy'.format(self.path_output), offset)
                 np.save('{}/aff.npy'.format(self.path_output), aff)
                 np.save('{}/gamma.npy'.format(self.path_output), gamma)
+                np.save('{}/confidence.npy'.format(self.path_output), confidence)

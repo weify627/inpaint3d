@@ -202,6 +202,9 @@ class NLSPN(nn.Module):
                               + mask_fix * feat_fix
 
             feat_result = self._propagate_once(feat_result, offset, aff)
+            if self.args.preserve_input and k == self.prop_time:
+                feat_result = (1.0 - mask_fix) * feat_result \
+                              + mask_fix * feat_fix
 
             list_feat.append(feat_result)
 

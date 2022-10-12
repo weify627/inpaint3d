@@ -21,7 +21,8 @@ import h5py
 from . import BaseDataset
 
 from PIL import Image
-# from scipy.interpolate import NearestNDInterpolator
+import cv2
+from scipy.interpolate import NearestNDInterpolator
 import scipy.ndimage as ndi
 import torch
 import torchvision.transforms as T
@@ -116,7 +117,7 @@ class SCANNET(BaseDataset):
         return len(self.sample_list)
 
     def __getitem__(self, idx):
-        rgb, dep, K = self._load_data(idx)
+        rgb, dep, gt, K = self._load_data(idx)
 
         if self.augment and self.mode == 'train':
             _scale = np.random.uniform(1.0, 1.5)
@@ -127,11 +128,13 @@ class SCANNET(BaseDataset):
             if flip > 0.5:
                 rgb = TF.hflip(rgb)
                 dep = TF.hflip(dep)
+                gt = TF.hflip(gt)
                 #fixme
                 # K[2] = width - K[2]
 
             rgb = TF.rotate(rgb, angle=degree, resample=Image.NEAREST)
             dep = TF.rotate(dep, angle=degree, resample=Image.NEAREST)
+            gt = TF.rotate(gt, angle=degree, resample=Image.NEAREST)
 
             t_rgb = T.Compose([
                 T.Resize(scale),
@@ -149,10 +152,19 @@ class SCANNET(BaseDataset):
                 T.ToTensor()
             ])
 
+            t_gt = T.Compose([
+                T.Resize(scale),
+                T.CenterCrop(self.crop_size),
+                self.ToNumpy(),
+                T.ToTensor()
+            ])
+
             rgb = t_rgb(rgb)
             dep = t_dep(dep)
+            gt = t_dep(gt)
 
             dep = dep / _scale
+            gt = gt / _scale
 
             # K = self.K.clone()
             K[0] = K[0] * _scale
@@ -175,21 +187,23 @@ class SCANNET(BaseDataset):
 
             rgb = t_rgb(rgb)
             dep = t_dep(dep)
+            gt = t_dep(gt)
 
             # K = self.K.clone()
 
         # fixme sample?
-        dep_sp = self.get_sparse_depth(dep, self.args.num_sample)
-        # data = dep_sp[0] * 1
+        # data = dep[0] * 1
         # maskidx = np.where(data>0)
         # interp = NearestNDInterpolator(np.transpose(maskidx), data[maskidx])
         # filled_data = interp(*np.indices(data.shape))
         # mean_kernel = np.full((7, 7), 1/49)
         # mean_data = ndi.correlate(filled_data, mean_kernel)
         # mask = (data>0).float()
-        # dep_init = torch.Tensor(mean_data) * (1 - mask) + data * mask
+        # dep = torch.Tensor(mean_data) * (1 - mask) + data * mask
+        # dep = dep[None]
+        dep_sp = self.get_sparse_depth(dep, self.args.num_sample)
 
-        output = {'rgb': rgb, 'dep': dep_sp, 'gt': dep, 'K': torch.Tensor(K), \
+        output = {'rgb': rgb, 'dep': dep_sp, 'gt': gt, 'K': torch.Tensor(K), \
                 'dep_ori': dep}
                 # 'dep_init': dep_init[None]}
 
@@ -200,18 +214,19 @@ class SCANNET(BaseDataset):
                                 self.sample_list[idx]['rgb'])
         path_depth = os.path.join(self.args.dir_data,
                                   self.sample_list[idx]['depth'])
-        # path_gt = os.path.join(self.args.dir_data,
-                               # self.sample_list[idx]['gt'])
+        path_gt = os.path.join(self.args.dir_data,
+                               self.sample_list[idx]['gt'])
         path_calib = os.path.join(self.args.dir_data,
                                   self.sample_list[idx]['K'])
         #fixme .replace('color','depth')
 
         depth = read_depth(path_depth)
-        # gt = read_depth(path_gt)
+        gt = read_depth(path_gt)
 
+        # depth = cv2.copyMakeBorder(depth, 6, 6, 8, 8, cv2.BORDER_REPLICATE) 
         rgb = Image.open(path_rgb)
         depth = Image.fromarray(depth.astype('float32'), mode='F')
-        # gt = Image.fromarray(gt.astype('float32'), mode='F')
+        gt = Image.fromarray(gt.astype('float32'), mode='F')
         # gt = depth * 1.0
 
         # if self.mode in ['train', 'val']:
@@ -222,11 +237,12 @@ class SCANNET(BaseDataset):
 
         w1, h1 = rgb.size
         w2, h2 = depth.size
-        # w3, h3 = gt.size
+        w3, h3 = gt.size
 
         assert w1 == w2 and h1 == h2
+        assert w1 == w3 and h1 == h3
 
-        return rgb, depth, K
+        return rgb, depth, gt, K
 
     def get_sparse_depth(self, dep, num_sample):
         # num_sample = dep.shape[1] * dep.shape[2] // (dep==0).sum()
