@@ -178,6 +178,10 @@ parser.add_argument('--test_crop',
                     action='store_true',
                     default=False,
                     help='crop for test')
+parser.add_argument('--label_mask',
+                    action='store_true',
+                    default=False,
+                    help='whether to use label to produce mask for input depth')
 
 
 # Summary

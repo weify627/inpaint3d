@@ -52,7 +52,7 @@ class NLSPNSummary(BaseSummary):
             self.loss = np.concatenate(self.loss, axis=0)
             self.loss = np.mean(self.loss, axis=0, keepdims=True)
 
-            msg = [" {:<9s}|  ".format('Loss')]
+            msg = [" {:<6s}|  ".format('Loss')]
             for idx, loss_type in enumerate(self.loss_name):
                 val = self.loss[0, idx]
                 self.add_scalar('Loss/' + loss_type, val, global_step)
@@ -73,7 +73,7 @@ class NLSPNSummary(BaseSummary):
             self.metric = np.concatenate(self.metric, axis=0)
             self.metric = np.mean(self.metric, axis=0, keepdims=True)
 
-            msg = [" {:<9s}|  ".format('Metric')]
+            msg = [" {:<6s}|  ".format('Metric')]
             for idx, name in enumerate(self.metric_name):
                 val = self.metric[0, idx]
                 self.add_scalar('Metric/' + name, val, global_step)

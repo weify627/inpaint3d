@@ -236,7 +236,7 @@ def train(gpu, args):
                 log_loss += loss_sum.item()
 
                 current_time = time.strftime('%y%m%d@%H:%M:%S')
-                error_str = '{:<10s}| {} | Loss = {:.4f}'.format(
+                error_str = '{:<6s}| {} | Loss = {:.4f}'.format(
                     'Train', current_time, log_loss / log_cnt)
 
                 if epoch == 1 and args.warm_up:

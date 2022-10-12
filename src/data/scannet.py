@@ -14,6 +14,7 @@
 
 
 import os
+import sys
 import warnings
 import numpy as np
 import json
@@ -21,13 +22,17 @@ import h5py
 from . import BaseDataset
 
 from PIL import Image
+import skimage
 import cv2
+import imageio
 from scipy.interpolate import NearestNDInterpolator
 import scipy.ndimage as ndi
+import scipy
 import torch
 import torchvision.transforms as T
 import torchvision.transforms.functional as TF
 from pdb import set_trace as pause
+from data.util import get_remapper, read_label_mapping, get_ids_uni
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -54,6 +59,13 @@ SCANNETDepthV2 json file has a following format:
 
 Reference : https://github.com/XinJCheng/CSPN/blob/master/nyu_dataset_loader.py
 """
+
+def load_label(path_rgb):
+    label_path = path_rgb.replace('scannetv2_images', 'label_filto').replace("/color", "_2d-label-filt.zip/label-filt")
+    label_path = label_path.replace('jpg', 'png')
+    label = imageio.imread(label_path)
+    labelraw = skimage.transform.resize(label, [240, 320], order=0, preserve_range=True, anti_aliasing=False).astype(np.int16)
+    return labelraw
 
 def read_depth(file_name):
     # loads depth map D from 16 bits png file as a numpy array,
@@ -113,11 +125,31 @@ class SCANNET(BaseDataset):
             json_data = json.load(json_file)
             self.sample_list = json_data[mode]
 
+        if self.args.label_mask:
+            path_to_module = "/n/fs/rgbd/users/fwei/data/scannet/data/tools"
+            sys.path.insert(0, path_to_module)
+            import ids
+            self.pureclabelexclude = ids.pureclabelexclude
+            label_map_file = "/data/fwei/scannet/data/scannetv2-labels.combined.tsv"
+            label_map = read_label_mapping(label_map_file, label_from='raw_category', label_to='id')
+            ids_uni = get_ids_uni(label_map)
+            self.ids_uni = ids_uni
+            ignore_label = 1000
+            self.remapper = get_remapper(ids_uni, ignore_label=ignore_label)
+            # len(self.remapper) = 1358, len(self.remapper3d) = 1001
+            for i, v in enumerate(self.remapper):
+                if v == ignore_label: continue
+                if i in ids.clutter_rawid:
+                    self.remapper[i] = 0  # commented for evaluation
+                else:
+                    self.remapper[i] = 1
+
+
     def __len__(self):
         return len(self.sample_list)
 
     def __getitem__(self, idx):
-        rgb, dep, gt, K = self._load_data(idx)
+        rgb, dep, gt, K, label = self._load_data(idx)
 
         if self.augment and self.mode == 'train':
             _scale = np.random.uniform(1.0, 1.5)
@@ -129,12 +161,14 @@ class SCANNET(BaseDataset):
                 rgb = TF.hflip(rgb)
                 dep = TF.hflip(dep)
                 gt = TF.hflip(gt)
+                label = TF.hflip(label)
                 #fixme
                 # K[2] = width - K[2]
 
             rgb = TF.rotate(rgb, angle=degree, resample=Image.NEAREST)
             dep = TF.rotate(dep, angle=degree, resample=Image.NEAREST)
             gt = TF.rotate(gt, angle=degree, resample=Image.NEAREST)
+            label = TF.rotate(label, angle=degree, resample=Image.NEAREST)
 
             t_rgb = T.Compose([
                 T.Resize(scale),
@@ -152,16 +186,10 @@ class SCANNET(BaseDataset):
                 T.ToTensor()
             ])
 
-            t_gt = T.Compose([
-                T.Resize(scale),
-                T.CenterCrop(self.crop_size),
-                self.ToNumpy(),
-                T.ToTensor()
-            ])
-
             rgb = t_rgb(rgb)
             dep = t_dep(dep)
             gt = t_dep(gt)
+            label = t_dep(label)
 
             dep = dep / _scale
             gt = gt / _scale
@@ -188,6 +216,7 @@ class SCANNET(BaseDataset):
             rgb = t_rgb(rgb)
             dep = t_dep(dep)
             gt = t_dep(gt)
+            label = t_dep(label)
 
             # K = self.K.clone()
 
@@ -201,13 +230,21 @@ class SCANNET(BaseDataset):
         # mask = (data>0).float()
         # dep = torch.Tensor(mean_data) * (1 - mask) + data * mask
         # dep = dep[None]
-        dep_sp = self.get_sparse_depth(dep, self.args.num_sample)
+        if self.args.label_mask:
+            # label_mask = self.remapper[label]
+            # if (label_mask==0).sum() == 0:
+                # print(self.sample_list[idx]['rgb'])
+            # dep_sp = self.get_masked_depth(dep, label)
+            dep_sp = dep * label
+        else:
+            dep_sp = self.get_sparse_depth(dep, self.args.num_sample)
 
         output = {'rgb': rgb, 'dep': dep_sp, 'gt': gt, 'K': torch.Tensor(K), \
                 'dep_ori': dep}
                 # 'dep_init': dep_init[None]}
 
         return output
+
 
     def _load_data(self, idx):
         path_rgb = os.path.join(self.args.dir_data,
@@ -218,6 +255,12 @@ class SCANNET(BaseDataset):
                                self.sample_list[idx]['gt'])
         path_calib = os.path.join(self.args.dir_data,
                                   self.sample_list[idx]['K'])
+        label = load_label(path_rgb)
+        if self.args.label_mask:
+            # label_mask = self.remapper[label]
+            # if (label_mask==0).sum() == 0:
+                # print(self.sample_list[idx]['rgb'])
+            label = self.get_depth_mask(label)
         #fixme .replace('color','depth')
 
         depth = read_depth(path_depth)
@@ -227,6 +270,7 @@ class SCANNET(BaseDataset):
         rgb = Image.open(path_rgb)
         depth = Image.fromarray(depth.astype('float32'), mode='F')
         gt = Image.fromarray(gt.astype('float32'), mode='F')
+        label = Image.fromarray(label.astype(np.int32), mode='I')
         # gt = depth * 1.0
 
         # if self.mode in ['train', 'val']:
@@ -242,7 +286,52 @@ class SCANNET(BaseDataset):
         assert w1 == w2 and h1 == h2
         assert w1 == w3 and h1 == h3
 
-        return rgb, depth, gt, K
+        return rgb, depth, gt, K, label
+
+    def n_sample(self, n_total, seed, size=None, replace=False):
+        if replace == None:
+            replace = n_total < size
+        if self.mode == 'train':
+            ret = np.random.choice(n_total, size, replace=replace)
+        else:
+            ret = np.random.RandomState(seed).choice(n_total, size, replace=replace)
+        return ret
+
+    def get_depth_mask(self, label):
+        label_mask = self.remapper[label]
+        label_mask[label_mask==1000]=1
+        if (label_mask==0).sum() <40000:
+            is_found = False
+            for i in range(20):
+                idx_s = self.n_sample(len(self.sample_list),label.sum()+i)
+                path_rgb = os.path.join(self.args.dir_data,
+                                self.sample_list[idx_s]['rgb'])
+                label_ = load_label(path_rgb)
+                label_mask_ = self.remapper[label_]
+                label_mask_[label_mask_==1000]=1
+                if (label_mask_==0).sum() != 0:
+                    is_found = True
+                    break
+            if is_found:
+                n_iter = self.n_sample(20, np.array(label).sum())+3
+                label_mask_ = 1-scipy.ndimage.binary_dilation(1-label_mask_, iterations=n_iter)
+                n_iter = self.n_sample(20, np.array(label).sum())+3
+                label_mask = 1-scipy.ndimage.binary_dilation(1-label_mask, iterations=n_iter)
+                depth_mask = (1-label_mask).astype(bool) | label_mask_.astype(bool)
+                if depth_mask.sum()<(label.shape[0]*label.shape[1]/4):
+                    is_found = False
+            if not is_found:
+                label_mask_ = label_mask * 1
+                ud = self.n_sample(label.shape[0], label.sum(), 2)
+                lr = self.n_sample(label.shape[1], label.sum(), 2)
+                label_mask_[ud.min():ud.max(),lr.min():lr.max()]=0
+                depth_mask = (1-label_mask).astype(bool) | label_mask_.astype(bool)
+        else:
+            n_iter = self.n_sample(30, np.array(label).sum())+10
+            depth_mask = scipy.ndimage.binary_dilation(1-label_mask, iterations=n_iter)
+        return depth_mask
+        dep_sp = dep * depth_mask
+        return dep_sp
 
     def get_sparse_depth(self, dep, num_sample):
         # num_sample = dep.shape[1] * dep.shape[2] // (dep==0).sum()

@@ -361,8 +361,8 @@ class NLSPNModel(nn.Module):
 
         # Diffusion
         y, y_inter, offset, aff, aff_const = \
-            self.prop_layer(pred_init, guide, confidence, dep_ori, rgb)
-            # self.prop_layer(pred_init, guide, confidence, dep, rgb)
+            self.prop_layer(pred_init, guide, confidence, dep, rgb)
+            # self.prop_layer(pred_init, guide, confidence, dep_ori, rgb)
 
         # Remove negative depth
         y = torch.clamp(y, min=0)
