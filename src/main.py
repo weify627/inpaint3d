@@ -153,7 +153,6 @@ def train(gpu, args):
     net = DDP(net)
 
     metric = get_metric(args)
-    # pause()
     metric = metric(args)
     summary = get_summary(args)
 
