@@ -186,6 +186,10 @@ parser.add_argument('--t_validmax',
                     type=float,
                     default=0.0,
                     help='valid depth for loss training')
+parser.add_argument('--mask_ellipsis',
+                    action='store_true',
+                    default=False,
+                    help='whether to mask ellipsis')
 
 
 # Summary

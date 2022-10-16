@@ -17,6 +17,7 @@ import os
 import shutil
 import torch.optim as optim
 import torch.optim.lr_scheduler as lrs
+from pdb import set_trace as pause
 
 
 class LRFactor:
@@ -94,3 +95,4 @@ def backup_source_code(backup_directory):
 
     shutil.copytree('.', backup_directory, ignore=ignore_hidden)
     os.system("chmod -R g+w {}".format(backup_directory))
+

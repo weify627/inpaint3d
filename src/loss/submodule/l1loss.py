@@ -15,25 +15,42 @@
 
 import torch
 import torch.nn as nn
+from pdb import set_trace as pause
 
+
+def get_mask(validmin, validmax, gt, ellipsis):
+    mask = gt > validmin
+    if validmax > 0:
+        mask &= gt < validmax
+    if ellipsis:
+        h, w = gt.shape[-2:]
+        x = torch.arange(w) - (w - 1) / 2
+        y = torch.arange(h) - (h - 1) / 2
+        grid_x, grid_y = torch.meshgrid(x, y)
+        mask_e = ((grid_x/ (w/2))**2 + (grid_y/(h/2))**2) <= 1
+        mask &= mask_e.T[None, None].cuda()
+    return mask
 
 class L1Loss(nn.Module):
     def __init__(self, args):
-        super(L1Loss, self).__init__()
+        super(L1Loss, self).__init__() #args, get_mask)
 
         self.args = args
         self.t_valid = 0.0001
         self.t_validmax = args.t_validmax
-        print("L1", self.t_validmax)
+        self.ellipsis = args.mask_ellipsis
+        # self.get_mask = get_mask
 
     def forward(self, pred, gt):
         gt = torch.clamp(gt, min=0, max=self.args.max_depth)
         pred = torch.clamp(pred, min=0, max=self.args.max_depth)
 
         # mask = (gt > self.t_valid).type_as(pred).detach()
-        mask = gt > self.t_valid
-        if self.t_validmax > 0:
-            mask &= gt < self.t_validmax
+        # pause()
+        mask = get_mask(self.t_valid, self.t_validmax, gt, self.ellipsis)
+        # mask = gt > self.t_valid
+        # if self.t_validmax > 0:
+            # mask &= gt < self.t_validmax
         mask = mask.type_as(pred).detach()
 
         d = torch.abs(pred - gt) * mask

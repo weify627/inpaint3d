@@ -44,6 +44,7 @@ import torch.distributed as dist
 import apex
 from apex.parallel import DistributedDataParallel as DDP
 from apex import amp
+from pdb import set_trace as pause
 
 # Minimize randomness
 torch.manual_seed(args_config.seed)
@@ -152,6 +153,7 @@ def train(gpu, args):
     net = DDP(net)
 
     metric = get_metric(args)
+    # pause()
     metric = metric(args)
     summary = get_summary(args)
 
