@@ -1,16 +1,34 @@
 {
     "test": [
         {
-            "rgb": "test/699-540-inp1.jpg",
-            "depth": "test/699-540-depth1.png",
-            "gt": "test/699-540-depth1.png",
-            "K": "scene0699_00/intrinsic/intrinsic_color.txt"
+            "rgb": "test/645-1540-inp.jpg",
+            "depth": "test/645-1540-depth.png",
+            "gt": "test/645-1540-depth.png",
+            "K": "scene0645_00/intrinsic/intrinsic_color.txt"
         },
         {
-            "rgb": "test/699-540-inp2.jpg",
-            "depth": "test/699-540-depth2.png",
-            "gt": "test/699-540-depth2.png",
-            "K": "scene0699_00/intrinsic/intrinsic_color.txt"
+            "rgb": "test/645-2080-inp.jpg",
+            "depth": "test/645-2080-depth.png",
+            "gt": "test/645-2080-depth.png",
+            "K": "scene0645_00/intrinsic/intrinsic_color.txt"
+        },
+        {
+            "rgb": "test/645-2840-inp.jpg",
+            "depth": "test/645-2840-depth.png",
+            "gt": "test/645-2840-depth.png",
+            "K": "scene0645_00/intrinsic/intrinsic_color.txt"
+        },
+        {
+            "rgb": "test/645-3180-inp.jpg",
+            "depth": "test/645-3180-depth.png",
+            "gt": "test/645-3180-depth.png",
+            "K": "scene0645_00/intrinsic/intrinsic_color.txt"
+        },
+        {
+            "rgb": "test/645-4500-inp.jpg",
+            "depth": "test/645-4500-depth.png",
+            "gt": "test/645-4500-depth.png",
+            "K": "scene0645_00/intrinsic/intrinsic_color.txt"
         }
     ]
 }
