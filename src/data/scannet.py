@@ -161,14 +161,16 @@ class SCANNET(BaseDataset):
                 rgb = TF.hflip(rgb)
                 dep = TF.hflip(dep)
                 gt = TF.hflip(gt)
-                label = TF.hflip(label)
+                if self.args.label_mask:
+                    label = TF.hflip(label)
                 #fixme
                 # K[2] = width - K[2]
 
             rgb = TF.rotate(rgb, angle=degree, resample=Image.NEAREST)
             dep = TF.rotate(dep, angle=degree, resample=Image.NEAREST)
             gt = TF.rotate(gt, angle=degree, resample=Image.NEAREST)
-            label = TF.rotate(label, angle=degree, resample=Image.NEAREST)
+            if self.args.label_mask:
+                label = TF.rotate(label, angle=degree, resample=Image.NEAREST)
 
             t_rgb = T.Compose([
                 T.Resize(scale),
@@ -189,7 +191,8 @@ class SCANNET(BaseDataset):
             rgb = t_rgb(rgb)
             dep = t_dep(dep)
             gt = t_dep(gt)
-            label = t_dep(label)
+            if self.args.label_mask:
+                label = t_dep(label)
 
             dep = dep / _scale
             gt = gt / _scale
@@ -216,7 +219,9 @@ class SCANNET(BaseDataset):
             rgb = t_rgb(rgb)
             dep = t_dep(dep)
             gt = t_dep(gt)
-            label = t_dep(label)
+
+            if self.args.label_mask:
+                label = t_dep(label)
 
             # K = self.K.clone()
 
@@ -255,12 +260,15 @@ class SCANNET(BaseDataset):
                                self.sample_list[idx]['gt'])
         path_calib = os.path.join(self.args.dir_data,
                                   self.sample_list[idx]['K'])
-        label = load_label(path_rgb)
         if self.args.label_mask:
             # label_mask = self.remapper[label]
             # if (label_mask==0).sum() == 0:
                 # print(self.sample_list[idx]['rgb'])
+            label = load_label(path_rgb)
             label = self.get_depth_mask(label)
+            label = Image.fromarray(label.astype(np.int32), mode='I')
+        else:
+            label = None
         #fixme .replace('color','depth')
 
         depth = read_depth(path_depth)
@@ -270,7 +278,6 @@ class SCANNET(BaseDataset):
         rgb = Image.open(path_rgb)
         depth = Image.fromarray(depth.astype('float32'), mode='F')
         gt = Image.fromarray(gt.astype('float32'), mode='F')
-        label = Image.fromarray(label.astype(np.int32), mode='I')
         # gt = depth * 1.0
 
         # if self.mode in ['train', 'val']:
@@ -335,7 +342,8 @@ class SCANNET(BaseDataset):
 
     def get_sparse_depth(self, dep, num_sample):
         # num_sample = dep.shape[1] * dep.shape[2] // (dep==0).sum()
-        # return dep
+        if num_sample == 0:
+            return dep
         channel, height, width = dep.shape
 
         assert channel == 1

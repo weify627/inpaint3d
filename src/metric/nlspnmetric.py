@@ -23,6 +23,7 @@ class NLSPNMetric(BaseMetric):
 
         self.args = args
         self.t_valid = 0.0001
+        self.t_validmax = args.t_validmax
 
         self.metric_name = [
             'RMSE', 'MAE', 'iRMSE', 'iMAE', 'REL', 'D^1', 'D^2', 'D^3'
@@ -38,6 +39,8 @@ class NLSPNMetric(BaseMetric):
 
             # For numerical stability
             mask = gt > self.t_valid
+            if self.t_validmax > 0:
+                mask &= gt < self.t_validmax
             num_valid = mask.sum()
 
             pred = pred[mask]
@@ -48,6 +51,9 @@ class NLSPNMetric(BaseMetric):
 
             pred_inv[pred <= self.t_valid] = 0.0
             gt_inv[gt <= self.t_valid] = 0.0
+            if self.t_validmax > 0:
+                pred_inv[pred >= self.t_validmax] = 0.0
+                gt_inv[gt >= self.t_validmax] = 0.0
 
             # RMSE / MAE
             diff = pred - gt

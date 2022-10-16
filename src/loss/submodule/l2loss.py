@@ -23,12 +23,18 @@ class L2Loss(nn.Module):
 
         self.args = args
         self.t_valid = 0.0001
+        self.t_validmax = args.t_validmax
+        print("L2", self.t_validmax)
 
     def forward(self, pred, gt):
         gt = torch.clamp(gt, min=0, max=self.args.max_depth)
         pred = torch.clamp(pred, min=0, max=self.args.max_depth)
 
-        mask = (gt > self.t_valid).type_as(pred).detach()
+        # mask = (gt > self.t_valid).type_as(pred).detach()
+        mask = gt > self.t_valid
+        if self.t_validmax > 0:
+            mask &= gt < self.t_validmax
+        mask = mask.type_as(pred).detach()
 
         d = torch.pow(pred - gt, 2) * mask
 

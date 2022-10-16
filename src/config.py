@@ -182,6 +182,10 @@ parser.add_argument('--label_mask',
                     action='store_true',
                     default=False,
                     help='whether to use label to produce mask for input depth')
+parser.add_argument('--t_validmax',
+                    type=float,
+                    default=0.0,
+                    help='valid depth for loss training')
 
 
 # Summary
