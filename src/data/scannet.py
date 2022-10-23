@@ -92,6 +92,14 @@ def read_calib_file(filepath):
     return data
 
 
+def sort_glob(path):
+    from glob import glob
+    files = glob(path+"/*")
+    files.sort(key=lambda x: int(x.split('/')[-1].split('.')[0])) 
+    return files
+
+
+
 class SCANNET(BaseDataset):
     def __init__(self, args, mode):
         super(SCANNET, self).__init__(args, mode)
@@ -120,10 +128,21 @@ class SCANNET(BaseDataset):
         # ])
 
         self.augment = self.args.augment
+        if args.split_json[-4:] == "json":
+            with open(self.args.split_json) as json_file:
+                json_data = json.load(json_file)
+                self.sample_list = json_data[mode]
+        else:
+            rgb_list = sort_glob(f"{args.split_json}/color")
+            depth_list = sort_glob(f"{args.split_json}/depthhole")
+            gt_list = depth_list
+            pause()
+            assert len(rgb_list) == len(depth_list)
+            assert len(rgb_list) == len(gt_list)
+            K = f"/data/fwei/scannet/ScanNet/SensReader/python/scannetv2_images/scene0{args.scene}/intrinsic/intrinsic_color.txt"
+            self.sample_list =[{"rgb":rgb, "depth": depth, "gt": gt, "K": K} \
+                    for (rgb, depth, gt) in zip(rgb_list, depth_list, gt_list)]
 
-        with open(self.args.split_json) as json_file:
-            json_data = json.load(json_file)
-            self.sample_list = json_data[mode]
 
         if self.args.label_mask:
             path_to_module = "/n/fs/rgbd/users/fwei/data/scannet/data/tools"

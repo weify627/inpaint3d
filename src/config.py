@@ -260,6 +260,10 @@ parser.add_argument('--save_result_only',
                     default=False,
                     help='save result images only with submission format')
 
+parser.add_argument('--scene',
+                    type=str,
+                    default='699',
+                    help="scene name for test")
 
 args = parser.parse_args()
 
