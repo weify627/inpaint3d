@@ -136,7 +136,7 @@ class SCANNET(BaseDataset):
             rgb_list = sort_glob(f"{args.split_json}/color")
             depth_list = sort_glob(f"{args.split_json}/depthhole")
             gt_list = depth_list
-            pause()
+            pause() #print(two lists
             assert len(rgb_list) == len(depth_list)
             assert len(rgb_list) == len(gt_list)
             K = f"/data/fwei/scannet/ScanNet/SensReader/python/scannetv2_images/scene0{args.scene}/intrinsic/intrinsic_color.txt"
@@ -147,7 +147,14 @@ class SCANNET(BaseDataset):
         if self.args.label_mask:
             path_to_module = "/n/fs/rgbd/users/fwei/data/scannet/data/tools"
             sys.path.insert(0, path_to_module)
+            # sys.argv.append('--ClutterSize')
+            # sys.argv.append("small")
             import ids
+            # print(sys.argv)
+            # sys.argv.pop(-1)
+            # sys.argv.pop(-1)
+            # print(sys.argv)
+
             self.pureclabelexclude = ids.pureclabelexclude
             label_map_file = "/data/fwei/scannet/data/scannetv2-labels.combined.tsv"
             label_map = read_label_mapping(label_map_file, label_from='raw_category', label_to='id')
@@ -262,7 +269,6 @@ class SCANNET(BaseDataset):
             dep_sp = dep * label
         else:
             dep_sp = self.get_sparse_depth(dep, self.args.num_sample)
-
         output = {'rgb': rgb, 'dep': dep_sp, 'gt': gt, 'K': torch.Tensor(K), \
                 'dep_ori': dep}
                 # 'dep_init': dep_init[None]}
@@ -302,7 +308,8 @@ class SCANNET(BaseDataset):
         # if self.mode in ['train', 'val']:
         calib = read_calib_file(path_calib)
         K_cam = np.reshape(calib, (4, 4))
-        K = [K_cam[0, 0], K_cam[1, 1], K_cam[0, 2] - 8.0, K_cam[1, 2] - 6.0] # account for crop
+        #fixme
+        K = [K_cam[0, 0]/2, K_cam[1, 1]/2, K_cam[0, 2]/2 - 8.0, K_cam[1, 2]/2 - 6.0] # account for crop
         # print(np.array(depth).max())
 
         w1, h1 = rgb.size
