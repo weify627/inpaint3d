@@ -120,7 +120,7 @@ if cross_frame or cross_frame2:
     poses = poses_t.to(device)
 if cross_frame2:
     imgs = images_t.to(device)
-    masks = masks_t.to(device)
+    maskss = masks_t.to(device)
     depcoms = depcom_t.to(device)
 #     pose1s = poses_t.to(device)
 # scene = "699"
@@ -165,6 +165,11 @@ def f(iii):
         shutil.copy(f_depcap, f_depcom)
         f_depcom = f"{root_resultseg}/depth_cfmask2.05/{frame_name.zfill(9)}.png"
         shutil.copy(f_depcap, f_depcom)
+        for idis in [0.05, 0.08]:
+            for ith in [0.3,0.5]:
+                if idis==0.08 and ith==0.5:continue
+                f_depcom = f"{root_resultseg}/depth_inpd{str(idis)[1:]}-r{str(ith)[1:]}/{frame_name.zfill(9)}.png"
+                shutil.copy(f_depcap, f_depcom)
     if not cross_frame2:
         f_imginp = f"{root_resultseg}/color/{frame_name}.jpg"
         imginp = imageio.imread(f_imginp)
@@ -262,7 +267,7 @@ def f(iii):
 #         break
         warper = Warper(device=f"gpu{device[-1]}" if len(device)>3 else "cpu", memory_opt=True)#False)
         warped_frame2, warped_mask2, warped_depth2, flow12, mask3, _ = \
-        warper.forward_warp(imgs, 1-masks, depcoms, poses, poses[i:(i+1)], intrinsics, None, render_image=False)
+        warper.forward_warp(imgs, 1-maskss, depcoms, poses, poses[i:(i+1)], intrinsics, None, render_image=False)
         mask_inp = 1 - masks_t[i:(i+1)]
         mask_int = mask_inp * mask3.cpu()*(depcom>0)
         depth_int = mask_int * warped_depth2.cpu()
