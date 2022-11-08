@@ -119,7 +119,7 @@ if cross_frame0:
 if cross_frame or cross_frame2:
     poses = poses_t.to(device)
 if cross_frame2:
-    img = images_t.to(device)
+    imgs = images_t.to(device)
     masks = masks_t.to(device)
     depcoms = depcom_t.to(device)
 #     pose1s = poses_t.to(device)
@@ -262,7 +262,7 @@ def f(iii):
 #         break
         warper = Warper(device=f"gpu{device[-1]}" if len(device)>3 else "cpu", memory_opt=True)#False)
         warped_frame2, warped_mask2, warped_depth2, flow12, mask3, _ = \
-        warper.forward_warp(img, 1-masks, depcoms, poses, poses[i:(i+1)], intrinsics, None, render_image=False)
+        warper.forward_warp(imgs, 1-masks, depcoms, poses, poses[i:(i+1)], intrinsics, None, render_image=False)
         mask_inp = 1 - masks_t[i:(i+1)]
         mask_int = mask_inp * mask3.cpu()*(depcom>0)
         depth_int = mask_int * warped_depth2.cpu()
