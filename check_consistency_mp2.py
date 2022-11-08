@@ -26,7 +26,6 @@ K2 = [K[0]/640*w0, K[1]/480*h0, w/2, h/2]
 
 remove_closer_deppre = True
 remove_huge_mask = True
-cross_frame = True
 closer_list = []
 mask_list = []
 dir_src = f"/home/fwei/project/inpaint3d/experiments/{exp_name}/test/epoch0020"
@@ -59,9 +58,9 @@ for f_deppre, f_mask in tqdm(zip(fs_deppre, fs_mask),total=len(fs_deppre)): #, f
     f_depcap = f"{root_data}/scannetv2_images5/scene0{scene}_00/depth/{int(frame_name)}.png"
     depcap = imageio.imread(f_depcap)/1000 #center_crop(imageio.imread(f_depcap), h, w)
     all_depths.append(depcap)
-#     f_deppre = f_mask.replace("mask", "depth_cfmask2.05")
-#     depcom = imageio.imread(f_deppre)/1000
-#     all_depcom.append(depcom)
+    f_deppre = f_mask.replace("mask", "depth_cfmask2.05")
+    depcom = imageio.imread(f_deppre)/1000
+    all_depcom.append(depcom)
 #     break
     
 #     f_dst = f_inp.split("/color/")[0]+"/depth/"+frame_name.zfill(9)+".png"
@@ -75,7 +74,7 @@ for f_deppre, f_mask in tqdm(zip(fs_deppre, fs_mask),total=len(fs_deppre)): #, f
 all_masks = torch.from_numpy(np.stack(all_masks))[:, None]
 all_depths = torch.from_numpy(np.stack(all_depths))[:, None]
 all_images = all_depths.repeat(1,3,1,1)
-# all_depcom = torch.from_numpy(np.stack(all_depcom))[:, None]
+all_depcom = torch.from_numpy(np.stack(all_depcom))[:, None]
 "done"
 
 use_dephren = False #True
@@ -84,6 +83,8 @@ remove_huge_mask = True
 cross_frame0 = False 
 cross_frame = True #False
 cross_frame2 = False #True
+cross_frame = False
+cross_frame2 = True
 closer_list = []
 mask_list = []
 dir_src = f"/home/fwei/project/inpaint3d/experiments/{exp_name}/test/epoch0020"
