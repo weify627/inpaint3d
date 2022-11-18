@@ -202,6 +202,11 @@ def get_frame_name(path):
     return frame_name
 
 
+def get_scene_name(path):
+    scene_name = path.split("/")[-3]
+    return scene_name
+
+
 def make_dir(dirname):
     if not os.path.exists(dirname):
         os.makedirs(dirname)
