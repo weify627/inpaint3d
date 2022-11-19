@@ -29,6 +29,8 @@ class Warper:
         self.resolution = resolution
         self.device = self.get_device(device)
         self.memory_opt = memory_opt
+        if memory_opt:
+            print("attention: reduced frame num")
         return
 
     def forward_warp(self, frame1: torch.Tensor, mask1: Optional[torch.Tensor], depth1: torch.Tensor,
@@ -65,8 +67,8 @@ class Warper:
         assert intrinsic1.shape == (b, 3, 3)
         assert intrinsic2.shape == (b, 3, 3)
 
-        frame1 = frame1.to(self.device)
-        mask1 = mask1.to(self.device)
+        # frame1 = frame1.to(self.device)
+        # mask1 = mask1.to(self.device)
         depth1 = depth1.to(self.device)
         transformation1 = transformation1.to(self.device)
         transformation2 = transformation2.to(self.device)
@@ -87,11 +89,13 @@ class Warper:
             flow12 = trans_coordinates.permute(0,3,1,2) - grid  # fixme
  
         # warped_frame2, mask2 = self.bilinear_splatting(frame1, mask1, trans_depth1, flow12, None, is_image=True)
+        gc.collect()
+        torch.cuda.empty_cache()
         if render_image:
             if self.memory_opt:
-                warped_frame2, mask2, _ = self.bilinear_splatting(frame1, mask1, trans_depth1, trans_pos, None, is_image=False)
+                warped_frame2, mask2, _ = self.bilinear_splatting(frame1, mask1, trans_depth1, trans_pos, None, is_image=True) #False)
             else:
-                warped_frame2, mask2 = self.bilinear_splatting(frame1, mask1, trans_depth1, flow12, None, is_image=False)
+                warped_frame2, mask2 = self.bilinear_splatting(frame1, mask1, trans_depth1, flow12, None, is_image=True) #False)
         else:
             warped_frame2, mask2 = 0, 0
 
@@ -154,6 +158,8 @@ class Warper:
                  mask2: (b,1,h,w): 1 for known and 0 for unknown
         """
         b0,_,h, w = frame1.shape
+        gc.collect()
+        torch.cuda.empty_cache()
         if self.memory_opt:
             trans_in = (trans_pos[:,0]>0) & (trans_pos[:,1]>0) & \
                     (trans_pos[:, 0]<=(w+1)) & (trans_pos[:, 1]<=(h+1))
@@ -162,8 +168,10 @@ class Warper:
             if id_visible.sum()==0:
                 print("all zero")
                 return frame1 * 0, mask1 * 0, None
-            frame1 = frame1[id_visible]
-            mask1 = mask1[id_visible]
+            # frame1 = frame1[id_visible]
+            # mask1 = mask1[id_visible]
+            frame1 = frame1[id_visible].to(self.device)
+            mask1 = mask1[id_visible].to(self.device)
             depth1 = depth1[id_visible]
             trans_pos = trans_pos[id_visible]
         if self.resolution is not None:
@@ -259,13 +267,13 @@ class Warper:
             warped_frame2 = torch.clamp(warped_frame2, min=-1, max=1)
         gc.collect()
         torch.cuda.empty_cache()
-        if self.memory_opt:
-            warped_frame2_ret = torch.zeros(b0,c,h,w).to(frame1)
-            warped_frame2_ret[id_visible] = warped_frame2
-            mask2_ret = torch.zeros(b0,1,h,w).to(mask2)
-            mask2_ret[id_visible] = mask2
-            return warped_frame2_ret, mask2_ret, id_visible
-        return warped_frame2, mask2, None
+        # if self.memory_opt:
+            # warped_frame2_ret = torch.zeros(b0,c,h,w).to(frame1)
+            # warped_frame2_ret[id_visible] = warped_frame2
+            # mask2_ret = torch.zeros(b0,1,h,w).to(mask2)
+            # mask2_ret[id_visible] = mask2
+            # return warped_frame2_ret, mask2_ret, id_visible
+        return warped_frame2, mask2, id_visible #None
 
     def bilinear_interpolation(self, frame2: torch.Tensor, mask2: Optional[torch.Tensor], flow12: torch.Tensor,
                                flow12_mask: Optional[torch.Tensor], is_image: bool = False) -> \

@@ -4,16 +4,22 @@ import multiprocessing as mp
 from utils.util import *
 from time import time
 from os.path import exists
+from pdb import set_trace as pause
 root_data = "/data/fwei/scannet/ScanNet/SensReader/python"
-scene = "645"
+scene = "231"
 exp_name = "221024_002501_test699small"
 exp_name = "221102_175827_test699-2dl.3"
 exp_name = "221102_175854_test645-2dl.3"
 exp_name = "221103_095034_test665-2dl.3"
 exp_name = "221107_192509_test665-sizeb1-2dl.3"
 exp_name = "221107_193226_test645-sizeb1-2dl.3"
+exp_name = "221118_184630_test221-sizeb1-2dl.3"
+exp_name = "221118_202205_test300-sizeb1-2dl.3"
+# exp_name = "221118_202711_test222-sizeb1-2dl.3"
+exp_name = "221118_202735_test231-sizeb1-2dl.3"
 root_exp = f"/n/fs/rgbd/users/fwei/exp/clutter_bpnet/mink3.7/"
 root_resultseg = f"{root_exp}/majc0_bnd1v3_csam_sizeb1_2dl.3/result{scene}/best" #"/com_pre2/scene0699_00"
+root_resultseg = f"{root_exp}/majc0_bnd1v3_csam_sizeb1_2dl.3/result_valinp{scene}/best" #"/com_pre2/scene0699_00"
 device="cuda:0"
 device="cpu"
 fK = f"{root_data}/scannetv2_images/scene0{scene}_00/intrinsic/intrinsic_depth.txt"
@@ -44,6 +50,14 @@ all_poses = []
 all_masks = []
 all_depths = []
 all_depcom = []
+use_dephren = False #True
+remove_closer_deppre = True
+remove_huge_mask = True
+cross_frame0 = False 
+cross_frame = True #False
+cross_frame2 = False #True
+# cross_frame = False
+# cross_frame2 = True
 # for f_deppre, f_mask, f_depren in zip(fs_deppre, fs_mask, fs_rdep):
 for f_deppre, f_mask in tqdm(zip(fs_deppre, fs_mask),total=len(fs_deppre)): #, fs_rimg):
     frame_name = get_frame_name(f_mask)
@@ -58,9 +72,10 @@ for f_deppre, f_mask in tqdm(zip(fs_deppre, fs_mask),total=len(fs_deppre)): #, f
     f_depcap = f"{root_data}/scannetv2_images5/scene0{scene}_00/depth/{int(frame_name)}.png"
     depcap = imageio.imread(f_depcap)/1000 #center_crop(imageio.imread(f_depcap), h, w)
     all_depths.append(depcap)
-    f_deppre = f_mask.replace("mask", "depth_cfmask2.05")
-    depcom = imageio.imread(f_deppre)/1000
-    all_depcom.append(depcom)
+    if cross_frame2:
+        f_deppre = f_mask.replace("mask", "depth_cfmask2.05")
+        depcom = center_crop(imageio.imread(f_deppre)/1000,h,w)
+        all_depcom.append(depcom)
 #     break
     
 #     f_dst = f_inp.split("/color/")[0]+"/depth/"+frame_name.zfill(9)+".png"
@@ -74,17 +89,10 @@ for f_deppre, f_mask in tqdm(zip(fs_deppre, fs_mask),total=len(fs_deppre)): #, f
 all_masks = torch.from_numpy(np.stack(all_masks))[:, None]
 all_depths = torch.from_numpy(np.stack(all_depths))[:, None]
 all_images = all_depths.repeat(1,3,1,1)
-all_depcom = torch.from_numpy(np.stack(all_depcom))[:, None]
+if all_depcom != []:
+    all_depcom = torch.from_numpy(np.stack(all_depcom))[:, None]
 "done"
 
-use_dephren = False #True
-remove_closer_deppre = True
-remove_huge_mask = True
-cross_frame0 = False 
-cross_frame = True #False
-cross_frame2 = False #True
-cross_frame = False
-cross_frame2 = True
 closer_list = []
 mask_list = []
 dir_src = f"/home/fwei/project/inpaint3d/experiments/{exp_name}/test/epoch0020"
@@ -162,14 +170,18 @@ def f(iii):
     f_depcom = f"{root_resultseg}/depth/{frame_name.zfill(9)}.png"
     if (mask==0).sum()==0:
         f_depcom = f"{root_resultseg}/depth_compre5/{frame_name.zfill(9)}.png"
-        shutil.copy(f_depcap, f_depcom)
+        # shutil.copy(f_depcap, f_depcom)
+        imageio.imwrite(f_depcom, depcap.astype(np.uint16))
         f_depcom = f"{root_resultseg}/depth_cfmask2.05/{frame_name.zfill(9)}.png"
-        shutil.copy(f_depcap, f_depcom)
+        # shutil.copy(f_depcap, f_depcom)
+        imageio.imwrite(f_depcom, depcap.astype(np.uint16))
+        imageio.imwrite(f_depcom, depcap.astype(np.uint16))
         for idis in [0.05, 0.08]:
             for ith in [0.3,0.5]:
                 if idis==0.08 and ith==0.5:continue
                 f_depcom = f"{root_resultseg}/depth_inpd{str(idis)[1:]}-r{str(ith)[1:]}/{frame_name.zfill(9)}.png"
-                shutil.copy(f_depcap, f_depcom)
+                imageio.imwrite(f_depcom, depcap.astype(np.uint16))
+        return
     if not cross_frame2:
         f_imginp = f"{root_resultseg}/color/{frame_name}.jpg"
         imginp = imageio.imread(f_imginp)
@@ -241,11 +253,12 @@ def f(iii):
         warper.forward_warp(img, 1-masks, dep, pose1s, poses, intrinsics, None, render_image=False)
 #         mask_occ = ((warped_depth2 +0.03)< depths_t.to(device))&(warped_depth2>0)#& masks_t.to(device).bool()
 #         mask_occ = ((warped_depth2)< depths_t.to(device))&(warped_depth2>0)#& masks_t.to(device).bool()
-        mask_occ = ((warped_depth2+0.05) < depths_t.to(device))&(warped_depth2>0)#& masks_t.to(device).bool()
+        mask_occ = ((warped_depth2+0.05) < depths_t[id_vis].to(device))&(warped_depth2>0)#& masks_t.to(device).bool()
         dep2 = warped_depth2 * mask_occ
 #         dep22 = warped_depth2 * (1-mask_occ.float())+mask_occ * depths_t.to(device)*(warped_depth2>0)
         warped_frame2, warped_mask1, warped_depth1, flow12, mask3, id_vis2 = \
-    warper.forward_warp(img, mask_occ, dep2, poses, pose1s, intrinsics, None, render_image=False)
+    warper.forward_warp(img[id_vis], mask_occ, dep2, poses[id_vis], pose1s[id_vis], intrinsics[id_vis], None, render_image=False)
+    # warper.forward_warp(img, mask_occ, dep2, poses, pose1s, intrinsics, None, render_image=False)
         mask_invalidinp = mask3.sum(0).cpu().numpy()[0]>0
         depcom6 = depcom * (1-mask_invalidinp)*1000
         f_depcom = f"{root_resultseg}/depth_cfmask2.05/{frame_name.zfill(9)}.png"
@@ -289,9 +302,9 @@ def f(iii):
         
 "done"
 all_files = [(i, f_deppre, f_mask) for i,(f_deppre, f_mask) in enumerate(zip(fs_deppre, fs_mask))]
-# for iii in all_files[:1]:
+# for iii in all_files:
     # f(iii)
 p = mp.Pool(processes=12) #mp.cpu_count()-8)
-p.map(f, all_files[:400])
+p.map(f, all_files[:500])
 p.close()
 p.join()
