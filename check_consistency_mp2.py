@@ -6,7 +6,7 @@ from time import time
 from os.path import exists
 from pdb import set_trace as pause
 root_data = "/data/fwei/scannet/ScanNet/SensReader/python"
-scene = "231"
+scene = "131"
 exp_name = "221024_002501_test699small"
 exp_name = "221102_175827_test699-2dl.3"
 exp_name = "221102_175854_test645-2dl.3"
@@ -16,12 +16,16 @@ exp_name = "221107_193226_test645-sizeb1-2dl.3"
 exp_name = "221118_184630_test221-sizeb1-2dl.3"
 exp_name = "221118_202205_test300-sizeb1-2dl.3"
 # exp_name = "221118_202711_test222-sizeb1-2dl.3"
-exp_name = "221118_202735_test231-sizeb1-2dl.3"
+# exp_name = "221118_202735_test231-sizeb1-2dl.3"
+exp_name = "221118_211826_test131-sizeb1-2dl.3"
+# exp_name = "221118_212910_test144-sizeb1-2dl.3"
+# exp_name = "221118_211625_test153-sizeb1-2dl.3"
+# exp_name = "221118_212125_test217-sizeb1-2dl.3"
 root_exp = f"/n/fs/rgbd/users/fwei/exp/clutter_bpnet/mink3.7/"
 root_resultseg = f"{root_exp}/majc0_bnd1v3_csam_sizeb1_2dl.3/result{scene}/best" #"/com_pre2/scene0699_00"
 root_resultseg = f"{root_exp}/majc0_bnd1v3_csam_sizeb1_2dl.3/result_valinp{scene}/best" #"/com_pre2/scene0699_00"
 device="cuda:0"
-device="cpu"
+# device="cpu"
 fK = f"{root_data}/scannetv2_images/scene0{scene}_00/intrinsic/intrinsic_depth.txt"
 K = read_2darray(fK)
 K = [K[0, 0], K[1, 1], K[0, 2], K[1, 2]]
@@ -302,9 +306,9 @@ def f(iii):
         
 "done"
 all_files = [(i, f_deppre, f_mask) for i,(f_deppre, f_mask) in enumerate(zip(fs_deppre, fs_mask))]
-# for iii in all_files:
-    # f(iii)
-p = mp.Pool(processes=12) #mp.cpu_count()-8)
-p.map(f, all_files[:500])
-p.close()
-p.join()
+for iii in all_files:
+    f(iii)
+# p = mp.Pool(processes=12) #mp.cpu_count()-8)
+# p.map(f, all_files[:500])
+# p.close()
+# p.join()
