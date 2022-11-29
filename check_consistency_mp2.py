@@ -1,4 +1,3 @@
-
 from WarperPytorch import Warper
 import multiprocessing as mp
 from utils.util import *
@@ -6,7 +5,6 @@ from time import time
 from os.path import exists
 from pdb import set_trace as pause
 root_data = "/data/fwei/scannet/ScanNet/SensReader/python"
-scene = "131"
 exp_name = "221024_002501_test699small"
 exp_name = "221102_175827_test699-2dl.3"
 exp_name = "221102_175854_test645-2dl.3"
@@ -20,7 +18,14 @@ exp_name = "221118_202205_test300-sizeb1-2dl.3"
 exp_name = "221118_211826_test131-sizeb1-2dl.3"
 # exp_name = "221118_212910_test144-sizeb1-2dl.3"
 # exp_name = "221118_211625_test153-sizeb1-2dl.3"
-# exp_name = "221118_212125_test217-sizeb1-2dl.3"
+exp_name = "221118_212125_test217-sizeb1-2dl.3"
+exp_name = "221118_222722_test064-sizeb1-2dl.3"
+# exp_name = "221118_222734_test088-sizeb1-2dl.3"
+exp_name = "221129_132127_test342-sizeb1-2dl.3"
+scene = "342" #"432"
+exp_name = f"/home/fwei/project/inpaint3d/experiments/221129_*test{scene}-sizeb1-2dl.3"
+assert len(glob(exp_name))==1
+exp_name = glob(exp_name)[0].split('/')[-1]
 root_exp = f"/n/fs/rgbd/users/fwei/exp/clutter_bpnet/mink3.7/"
 root_resultseg = f"{root_exp}/majc0_bnd1v3_csam_sizeb1_2dl.3/result{scene}/best" #"/com_pre2/scene0699_00"
 root_resultseg = f"{root_exp}/majc0_bnd1v3_csam_sizeb1_2dl.3/result_valinp{scene}/best" #"/com_pre2/scene0699_00"
@@ -60,8 +65,8 @@ remove_huge_mask = True
 cross_frame0 = False 
 cross_frame = True #False
 cross_frame2 = False #True
-# cross_frame = False
-# cross_frame2 = True
+cross_frame = False
+cross_frame2 = True
 # for f_deppre, f_mask, f_depren in zip(fs_deppre, fs_mask, fs_rdep):
 for f_deppre, f_mask in tqdm(zip(fs_deppre, fs_mask),total=len(fs_deppre)): #, fs_rimg):
     frame_name = get_frame_name(f_mask)
